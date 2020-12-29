@@ -1,0 +1,156 @@
+---
+title: "MBriskApp"
+author: "Jakub Qazi"
+date: "December 10th, 2020"
+---
+
+#Stucture the application page 
+
+```{r}
+library("shiny")
+ui=fluidPage( 
+  
+#MB risk calculator title  
+  titlePanel("Major Bleeding Risk Calculator For Real-World  
+             Oral Anticoagulant (OAC) Users With Atrial Fibrillation"),  
+  
+#Create sidebar input variables, input variable names and input drop-down choices  
+  sidebarLayout(  
+    sidebarPanel(  
+      
+#All bleeding predictors are defined as a dichotomous input variable.  
+      selectInput("Age", "Age greater or equal to 75", choices=c("No","Yes")),  
+      selectInput("Sex", "Female Sex", choices=c("No","Yes")),  
+      selectInput("LiverDisease", "Liver disease within 3 years before the first OAC claim", choices=c("No","Yes")),  
+      selectInput("PriorMB", "Major bleeding within 3 years before the first OAC claim", choices=c("No","Yes")),  
+      selectInput("Cardiomyopathy", "Cardiomyopathy within 3 years before the first OAC claim", choices=c("No","Yes")),  
+      selectInput("PVD", "Peripheral vascular disease within 3 years before the first OAC claim", choices=c("No","Yes")),  
+      selectInput("Hypertension", "Hypertension within 3 years before the first OAC claim", choices=c("No","Yes")),  
+      selectInput("CHF", "Congestive heart failure within 3 years before the first OAC claim", choices=c("No","Yes")),  
+      selectInput("COPD", "COPD or asthma within 3 years before the first OAC claim", choices=c("No","Yes")),  
+      selectInput("VHD", "Valvular heart disease within 3 years before the first OAC claim", choices=c("No","Yes")),  
+      selectInput("AMI", "Acute myocardial infarction within 3 years before the first OAC claim", choices=c("No","Yes")),  
+      selectInput("Antiplatelets", "Antiplatelet use within 2 weeks before the first OAC claim", choices=c("No","Yes")),  
+      selectInput("Antidiabetics", "Antidiabetics use within 2 weeks before the first OAC claim", choices=c("No","Yes")),  
+      selectInput("Antidepressants", "Antidepressants use within 2 weeks before the first OAC claim", choices=c("No","Yes")),  
+      selectInput("Warfarin", "Warfarin use without OAC use one year prior", choices=c("No","Yes")),  
+      selectInput("Dabigatran", "Dabigratran use without OAC use one year prior", choices=c("No","Yes")),  
+      selectInput("Rivaroxaban", "Rivaroxaban use without OAC use one year prior", choices=c("No","Yes")),  
+      selectInput("Apixaban", "Apixaban use without OAC use one year prior", choices=c("No","Yes"))  
+    ),  
+#Create output panel  
+    mainPanel(  
+      tableOutput("result")  
+    )    
+  )  
+)  
+```
+
+#Define server logic to create the input table  
+
+```{r}
+server=function(input, output){  
+  
+#Reactive function is used so that the function is re-run when the inputs change  
+  inputdata<-reactive({  
+    data<-data.frame(  
+#All relevant bleeding predictors are defined as input  
+      MyAge=input$Age,  
+      MySex=input$Sex,  
+      MyLiverDisease=input$LiverDisease,  
+      MyPriorMB=input$PriorMB,  
+      MyCardiomyopathy=input$Cardiomyopathy,  
+      MyPVD=input$PVD,   
+      MyHypertension=input$Hypertension,   
+      MyCHF=input$CHF,   
+      MyCOPD=input$COPD,  
+      MyVHD=input$VHD,   
+      MyAMI=input$AMI,   
+      MyAntiplatelets=input$Antiplatelets,  
+      MyAntidiabetics=input$Antidiabetics,    
+      MyAntidepressants=input$Antidepressants,   
+      MyWarfarin=input$Warfarin,   
+      MyDabigatran=input$Dabigatran,   
+      MyRivaroxaban=input$Rivaroxaban,   
+      MyApixaban=input$Apixaban  
+    )  
+    data  
+  })  
+  
+  
+#Create an output table by calling the inputdata function  
+  output$result<-renderTable({  
+    data=inputdata()  
+    
+#Use inputted data to calculate risk as defined by our published prediction model  
+    x=-4.51  
+    if (data$MyAge=="Yes"){  
+      x<-x+0.31  
+    }  
+    if (data$MySex=="Yes"){  
+      x<-x+0.08  
+    }  
+    if (data$MyLiverDisease=="Yes"){  
+      x<-x+0.49  
+    }  
+    if (data$MyPriorMB=="Yes"){  
+      x<-x+0.45  
+    }  
+    if (data$MyCardiomyopathy=="Yes"){  
+      x<-x+0.2  
+    }  
+    if (data$MyPVD=="Yes"){  
+      x<-x+0.2  
+    }  
+    if (data$MyHypertension=="Yes"){  
+      x<-x+0.14  
+    }  
+    if (data$MyCHF=="Yes"){  
+      x<-x+0.12  
+    }  
+    if (data$MyCOPD=="Yes"){  
+      x<-x+0.12  
+    }  
+    if (data$MyVHD=="Yes"){  
+      x<-x+0.10  
+    }  
+    if (data$MyAMI=="Yes"){  
+      x<-x+0.09  
+    }  
+    if (data$MyAntiplatelets=="Yes"){  
+      x<-x+0.25  
+    }  
+    if (data$MyAntidiabetics=="Yes"){  
+      x<-x+0.17  
+    }  
+    if (data$MyAntidepressants=="Yes"){  
+      x<-x+0.10  
+    }  
+    if (data$MyWarfarin=="Yes"){  
+      x<-x  
+    }  
+    if (data$MyDabigatran=="Yes"){  
+      x<-x  
+    }  
+    if (data$MyRivaroxaban=="Yes"){  
+      x<-x  
+    }  
+    if (data$MyApixaban=="Yes"){  
+      x<-x-0.37  
+    }  
+    
+    Risk=exp(x)/(1+exp(x))  
+    
+#Create final dataframe for the output using a
+    resultTable=data.frame(  
+      Result="The one-year real-world probability of major bleeding for this individual oral anticoagulant new user is",  
+      Probability=Risk*100,   
+      Unit="%"  
+    )  
+    resultTable  
+  })  
+}  
+```
+
+#Create the application  
+`shinyApp(ui=ui, server=server)`
